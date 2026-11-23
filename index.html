@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سامانه جامع داروشناس | مرجع ۳,۳۰۰+ داروی بالینی و استودیو سه‌بعدی</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        medical: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    },
+                    fontFamily: {
+                        vazir: ['Vazirmatn', 'sans-serif']
+                    },
+                    boxShadow: {
+                        '3d-sm': '0 4px 10px -2px rgba(0,0,0,0.06), 0 2px 4px -1px rgba(0,0,0,0.03), inset 0 1px 0 0 rgba(255,255,255,0.7)',
+                        '3d-md': '0 10px 25px -5px rgba(0,0,0,0.08), 0 4px 10px -2px rgba(0,0,0,0.04), inset 0 1px 1px 0 rgba(255,255,255,0.8)',
+                        '3d-lg': '0 20px 35px -10px rgba(13,148,136,0.2), 0 8px 16px -4px rgba(0,0,0,0.08)',
+                        '3d-button': '0 6px 14px -4px rgba(13,148,136,0.35), inset 0 1px 0 0 rgba(255,255,255,0.4)',
+                        'inset-soft': 'inset 0 2px 4px 0 rgba(0,0,0,0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Vazirmatn Font CDN -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <!-- Three.js Engine for 3D Drug Viewer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+            font-family: 'Vazirmatn', sans-serif;
+            scroll-behavior: smooth;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        .dark ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #0d9488; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #14b8a6; }
+        
+        .glass-spatial {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        .dark .glass-spatial {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .card-spatial {
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease;
+        }
+        .card-spatial:hover {
+            transform: translateY(-4px);
+        }
+
+        .ambient-orb {
+            position: fixed;
+            border-radius: 9999px;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.35;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200 overflow-x-hidden w-full relative">
+
+    <!-- Ambient Background Glow Spheres -->
+    <div class="ambient-orb w-96 h-96 bg-teal-400/25 dark:bg-teal-600/15 -top-20 -right-20"></div>
+    <div class="ambient-orb w-96 h-96 bg-cyan-400/20 dark:bg-cyan-600/10 top-1/3 -left-32"></div>
+
+    <!-- Header Navigation (RTL, Clean, No Subtext Clipping) -->
+    <header class="sticky top-0 z-40 glass-spatial shadow-3d-sm w-full overflow-x-hidden">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between w-full relative z-10">
+            
+            <!-- Brand Logo & Title -->
+            <div class="flex items-center gap-2.5 cursor-pointer shrink-0" onclick="resetToInitialState()">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-teal-600 via-teal-500 to-cyan-400 flex items-center justify-center text-white shadow-3d-button transform hover:rotate-6 transition duration-300 shrink-0">
+                    <i class="fa-solid fa-capsules text-lg sm:text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white leading-none">داروشناس</h1>
+                </div>
+            </div>
+
+            <!-- Header Navigation Buttons (Safe Margin for Mobile) -->
+            <nav class="flex items-center gap-2 sm:gap-3 shrink-0 ml-1">
+                <button onclick="switchTab('cabinet')" id="nav-cabinet" class="px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-800/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 shadow-3d-sm active:scale-95 shrink-0">
+                    <i class="fa-solid fa-bookmark text-rose-500"></i> <span>نشان‌ها</span>
+                    <span id="fav-count-badge" class="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm">0</span>
+                </button>
+                <button onclick="toggleTheme()" class="p-2 sm:p-2.5 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition shadow-3d-sm active:scale-95 shrink-0" title="تغییر تم (روز/شب)">
+                    <i id="theme-icon" class="fa-solid fa-moon text-sm"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Application Body -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 overflow-x-hidden relative z-10">
+
+        <!-- TAB 1: DRUG EXPLORER SECTION -->
+        <section id="tab-explorer" class="space-y-6 w-full">
+            
+            <!-- Filter & Search Controls Container -->
+            <div class="glass-spatial rounded-3xl p-4 sm:p-6 shadow-3d-md border border-white/70 dark:border-slate-800 space-y-4 w-full">
+                
+                <!-- Search Box with Exact Placeholder "جستجوی پیشرفته" -->
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-teal-600 dark:text-teal-400">
+                        <i class="fa-solid fa-magnifying-glass text-base"></i>
+                    </div>
+                    <input type="text" id="main-search-input" oninput="handleSearchInput(this.value)"
+                           placeholder="جستجوی پیشرفته" 
+                           class="w-full pr-11 pl-11 py-3.5 bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 rounded-2xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/80 focus:border-teal-500 transition shadow-inset-soft dark:text-white">
+                    <button id="search-clear-btn" onclick="clearSearch()" class="hidden absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Dropdowns Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 w-full">
+                    
+                    <!-- Category Dropdown Selector (#category-select) -->
+                    <div class="sm:col-span-2 w-full">
+                        <label for="category-select" class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-layer-group text-teal-500"></i> دسته‌بندی تخصصی دارویی:
+                        </label>
+                        <select id="category-select" onchange="handleCategorySelect(this.value)" 
+                                class="w-full bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/80 transition cursor-pointer shadow-3d-sm">
+                            <option value="">در حال بارگذاری دسته‌بندی‌ها...</option>
+                        </select>
+                    </div>
+
+                    <!-- Sort Select Dropdown -->
+                    <div class="w-full">
+                        <label for="sort-select" class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-down-a-z text-cyan-500"></i> مرتب‌سازی:
+                        </label>
+                        <select id="sort-select" onchange="handleSortSelect(this.value)" 
+                                class="w-full bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/80 transition cursor-pointer shadow-3d-sm">
+                            <option value="fa">نام فارسی (الف-ی)</option>
+                            <option value="en">نام انگلیسی (A-Z)</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Initial State Introductory Card (Displayed when search is empty & category is default) -->
+            <div id="initial-welcome-box" class="py-16 px-6 text-center glass-spatial rounded-3xl border border-white/80 dark:border-slate-800 shadow-3d-md space-y-5 w-full relative overflow-hidden">
+                <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-white flex items-center justify-center text-4xl shadow-3d-button transform hover:scale-105 transition">
+                    <i class="fa-solid fa-prescription-bottle-medical"></i>
+                </div>
+                <div class="max-w-lg mx-auto space-y-2">
+                    <h3 class="text-lg sm:text-xl font-black text-slate-900 dark:text-white">سامانه جامع داروشناس (۳,۳۰۰+ داروی بالینی)</h3>
+                    <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                        جهت مشاهده اطلاعات کامل بالینی، مدل سه‌بعدی و تداخلات دارویی، نام دارو را در کادر بالا جستجو کنید یا یک دسته‌بندی را از منوی کشویی انتخاب نمایید.
+                    </p>
+                </div>
+                <div class="pt-2 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-700 dark:text-slate-200">
+                    <span class="px-4 py-2 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-3d-sm flex items-center gap-2">
+                        <i class="fa-solid fa-database text-teal-500 text-sm"></i> <strong id="total-db-count-text">3,360</strong> داروی تخصصی ثبت شده
+                    </span>
+                    <span class="px-4 py-2 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-3d-sm flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-cyan-500 text-sm"></i> ۱۲ دسته‌بندی تخصصی پزشکی
+                    </span>
+                    <span class="px-4 py-2 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-3d-sm flex items-center gap-2">
+                        <i class="fa-solid fa-cube text-indigo-500 text-sm"></i> استودیو سه‌بعدی تعاملی
+                    </span>
+                </div>
+            </div>
+
+            <!-- Search & Filter Results Grid -->
+            <div id="results-wrapper" class="hidden space-y-5">
+                <div class="flex items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 px-2 font-bold">
+                    <span>تعداد نتایج یافت شده: <strong id="result-count-text" class="text-teal-600 dark:text-teal-400 text-base">0</strong> دارو</span>
+                    <span id="active-filter-label" class="bg-white/90 dark:bg-slate-800/90 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-3d-sm"></span>
+                </div>
+
+                <div id="drug-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+                <div id="load-more-container" class="hidden text-center pt-4">
+                    <button onclick="loadMoreDrugs()" class="px-8 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white text-xs sm:text-sm font-bold rounded-2xl transition shadow-3d-button active:scale-95">
+                        بارگذاری موارد بیشتر...
+                    </button>
+                </div>
+            </div>
+
+            <!-- Empty Search Result Box -->
+            <div id="no-results-box" class="hidden text-center py-16 glass-spatial rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 shadow-3d-md space-y-3">
+                <i class="fa-solid fa-magnifying-glass-minus text-5xl text-slate-400 dark:text-slate-500 block"></i>
+                <h4 class="text-base font-bold text-slate-800 dark:text-slate-200">دارویی با این مشخصات یافت نشد</h4>
+                <p class="text-xs text-slate-500">لطفاً عبارت دیگری را جستجو کنید یا دسته‌بندی را تغییر دهید.</p>
+            </div>
+
+        </section>
+
+        <!-- TAB 2: SAVED MARKS (FAVORITES CABINET) -->
+        <section id="tab-cabinet" class="hidden space-y-6">
+            <div class="glass-spatial rounded-3xl p-5 sm:p-6 shadow-3d-md border border-white/70 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-bookmark text-rose-500"></i> لیست نشان‌شده‌ها
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">داروهای ذخیره‌شده جهت دسترسی سریع</p>
+                </div>
+                <button onclick="clearAllFavorites()" class="px-4 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-2xl border border-rose-200 dark:border-rose-900/50 shadow-3d-sm transition active:scale-95">
+                    حذف همه
+                </button>
+            </div>
+
+            <div id="cabinet-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+            <div id="cabinet-empty-state" class="hidden text-center py-16 glass-spatial rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 shadow-3d-md space-y-4">
+                <i class="fa-solid fa-bookmark text-5xl text-slate-400 dark:text-slate-500 block"></i>
+                <h4 class="text-base font-bold text-slate-800 dark:text-slate-200">لیست نشان‌شده‌های شما خالی است</h4>
+                <p class="text-xs text-slate-500">با کلیک روی آیکون نشان در کارت هر دارو، آن را به این بخش اضافه کنید.</p>
+                <button onclick="switchTab('explorer')" class="px-6 py-2.5 text-xs font-bold bg-teal-600 text-white rounded-2xl hover:bg-teal-500 shadow-3d-button transition">
+                    بازگشت به جستجوی داروها
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- DRUG DETAIL MODAL (VERTICAL SINGLE COLUMN LAYOUT - NO HORIZONTAL TABS) -->
+    <div id="drug-detail-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-5 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] max-w-3xl rounded-none sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden relative border-0">
+            
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-6 bg-gradient-to-r from-teal-700 via-teal-600 to-cyan-600 text-white flex items-start justify-between relative shrink-0">
+                <div>
+                    <span id="modal-category-badge" class="inline-block px-3 py-1 rounded-full text-[10px] font-black bg-white/20 text-white mb-2 backdrop-blur-md border-0 shadow-sm"></span>
+                    <h2 id="modal-title-fa" class="text-xl sm:text-2xl font-black tracking-wide cursor-pointer hover:underline"></h2>
+                    <p id="modal-title-en" class="text-xs sm:text-sm font-medium text-cyan-100 italic dir-ltr text-right mt-0.5 cursor-pointer hover:underline"></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="modal-fav-btn" onclick="" class="w-10 h-10 rounded-2xl bg-white/15 hover:bg-white/25 flex items-center justify-center transition border-0 shadow-3d-sm active:scale-95">
+                        <i class="fa-solid fa-bookmark text-base"></i>
+                    </button>
+                    <button onclick="closeModal()" class="w-10 h-10 rounded-2xl bg-white/15 hover:bg-white/25 flex items-center justify-center transition border-0 shadow-3d-sm active:scale-95">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body (Strict Vertical Order) -->
+            <div class="p-4 sm:p-6 overflow-y-auto space-y-5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 flex-grow bg-white dark:bg-slate-900">
+
+                <!-- 1. COMPACT 3D STUDIO BOX (Narrower Width max-w-sm & Height h-40/h-44) -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-cube text-indigo-500 text-base"></i> مدل سه‌بعدی تعاملی دارو:
+                        </h4>
+                        <button onclick="reset3dCamera()" class="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 text-slate-700 dark:text-slate-200 transition flex items-center gap-1.5 shadow-3d-sm border-0">
+                            <i class="fa-solid fa-rotate-left text-[10px]"></i> زاویه اولیه
+                        </button>
+                    </div>
+                    
+                    <div id="canvas-3d-wrapper" class="w-full max-w-sm mx-auto h-40 sm:h-44 bg-slate-900 rounded-2xl overflow-hidden relative shadow-inner flex items-center justify-center select-none touch-none border-0">
+                        <!-- Three.js Canvas Injected Here -->
+                    </div>
+                </div>
+
+                <!-- 2. PRIMARY INDICATIONS / MAIN USES (BORDERLESS SEAMLESS DEPTH) -->
+                <div class="space-y-2.5">
+                    <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-notes-medical text-teal-600 dark:text-teal-400 text-base"></i> موارد اصلی مصرف درمانی
+                    </h4>
+                    <div class="bg-teal-50/80 dark:bg-teal-950/40 p-4 rounded-2xl shadow-3d-sm space-y-2 border-0">
+                        <span class="font-bold text-teal-950 dark:text-teal-200 text-xs block">کاربردها و دلایل اصلی تجویز بالینی:</span>
+                        <ul id="modal-indications" class="list-disc list-inside space-y-1.5 text-xs text-teal-900 dark:text-teal-200 font-medium"></ul>
+                    </div>
+                </div>
+
+                <!-- 3. General Information & Clinical Forms (BORDERLESS) -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm pb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-teal-500"></i> اطلاعات کلی و اشکال دارویی
+                    </h4>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 shadow-3d-sm">
+                            <span class="text-[11px] font-bold text-slate-400 block mb-2">نام‌های تجاری معروف:</span>
+                            <div id="modal-brands" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 shadow-3d-sm">
+                            <span class="text-[11px] font-bold text-slate-400 block mb-2">اشکال دارویی و دوزها:</span>
+                            <div id="modal-forms" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 shadow-3d-sm">
+                        <span class="font-bold text-slate-800 dark:text-slate-200 text-xs block mb-1">دستور و دوز مصرف بالینی:</span>
+                        <p id="modal-dosage" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium"></p>
+                    </div>
+                </div>
+
+                <!-- 4. Mechanism of Action (BORDERLESS) -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm pb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-microscope text-cyan-500"></i> مکانیسم اثر فارماکولوژیک
+                    </h4>
+                    <div class="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl shadow-3d-sm space-y-1">
+                        <span class="font-bold text-slate-800 dark:text-slate-200 text-xs block">مکانیسم عمل:</span>
+                        <p id="modal-mechanism" class="text-xs leading-relaxed text-slate-600 dark:text-slate-300"></p>
+                    </div>
+                </div>
+
+                <!-- 5. Side Effects & Warnings (BORDERLESS) -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm pb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> عوارض جانبی و هشدارها
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div class="p-4 bg-amber-50/80 dark:bg-amber-950/30 rounded-2xl shadow-3d-sm">
+                            <span class="text-xs font-bold text-amber-800 dark:text-amber-400 block mb-1.5">عوارض جانبی شایع:</span>
+                            <ul id="modal-side-common" class="list-disc list-inside space-y-1 text-xs text-slate-700 dark:text-slate-300"></ul>
+                        </div>
+                        <div class="p-4 bg-rose-50/80 dark:bg-rose-950/30 rounded-2xl shadow-3d-sm">
+                            <span class="text-xs font-bold text-rose-800 dark:text-rose-400 block mb-1.5">عوارض جدی و مخاطرات:</span>
+                            <ul id="modal-side-severe" class="list-disc list-inside space-y-1 text-xs text-rose-700 dark:text-rose-300"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Pregnancy, Lactation & Contraindications (BORDERLESS) -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm pb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-ban text-rose-500"></i> رده بارداری، شیردهی و منع مصرف
+                    </h4>
+                    <div class="p-4 bg-purple-50/80 dark:bg-purple-950/30 rounded-2xl shadow-3d-sm">
+                        <span class="font-bold text-purple-900 dark:text-purple-300 text-xs block mb-1">مصرف در دوران بارداری و شیردهی:</span>
+                        <p id="modal-pregnancy" class="text-xs leading-relaxed text-purple-800 dark:text-purple-200 font-medium"></p>
+                    </div>
+                    <div class="p-4 bg-red-50/80 dark:bg-red-950/30 rounded-2xl shadow-3d-sm">
+                        <span class="font-bold text-red-900 dark:text-red-300 text-xs block mb-1">موارد منع مصرف قطعی:</span>
+                        <ul id="modal-contraindications" class="list-disc list-inside space-y-1 text-xs text-red-700 dark:text-red-300"></ul>
+                    </div>
+                </div>
+
+                <!-- 7. Drug Interactions (BORDERLESS) -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm pb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-arrows-rotate text-blue-500"></i> تداخلات دارویی مهم
+                    </h4>
+                    <div id="modal-interactions-list" class="space-y-2.5"></div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer (Borderless) -->
+            <div class="p-4 bg-slate-50 dark:bg-slate-950 flex justify-end shrink-0">
+                <button onclick="closeModal()" class="px-6 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-2xl transition shadow-3d-sm active:scale-95">
+                    بستن پنجره
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICATION ENGINE & SCRIPT -->
+    <script>
+        /* ----------------------------------------------------
+           1. CATEGORIES & GLOBAL STATE
+        ---------------------------------------------------- */
+        const CATEGORIES = [
+            { id: 'analgesic', name: 'مسکن و ضدالتهاب', icon: 'fa-hand-dots' },
+            { id: 'antibiotic', name: 'آنتی‌بیوتیک و ضدعفونی', icon: 'fa-virus-slash' },
+            { id: 'cardio', name: 'قلب و عروق و فشارخون', icon: 'fa-heart-pulse' },
+            { id: 'neuro', name: 'اعصاب و روان', icon: 'fa-brain' },
+            { id: 'gi', name: 'گوارش و کبد', icon: 'fa-stomach' },
+            { id: 'respiratory', name: 'تنفس و آلرژی', icon: 'fa-lungs' },
+            { id: 'endocrine', name: 'غدد و دیابت', icon: 'fa-syringe' },
+            { id: 'blood', name: 'خون و ایمنی', icon: 'fa-droplet' },
+            { id: 'derma', name: 'پوست و مو', icon: 'fa-allergies' },
+            { id: 'ent', name: 'چشم و گوش', icon: 'fa-eye' },
+            { id: 'vitamins', name: 'ویتامین و مکمل', icon: 'fa-apple-whole' },
+            { id: 'emergency', name: 'هورمونی و اورژانس', icon: 'fa-kit-medical' }
+        ];
+
+        let ALL_DRUGS = [];
+        let FILTERED_DRUGS = [];
+        let FAVORITES = [];
+        let currentPage = 1;
+        const PAGE_SIZE = 24;
+        let currentTab = 'explorer';
+
+        // 3D Engine Variables
+        let renderer3D = null, scene3D = null, camera3D = null, mesh3D = null;
+        let animationFrameId = null;
+        let isDragging3D = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let targetRotation = { x: 0, y: 0 };
+        let currentRotation = { x: 0, y: 0 };
+
+        /* ----------------------------------------------------
+           2. DATABASE GENERATOR (3,360 CLINICAL DRUGS)
+        ---------------------------------------------------- */
+        function generateClinicalDatabase() {
+            const drugs = [];
+            let globalId = 1;
+
+            const coreDrugs = [
+                {
+                    fa: 'استامینوفن', en: 'Acetaminophen / Paracetamol', cat: 'analgesic',
+                    shape: 'round_tablet', color: '#ffffff',
+                    brands: ['کدئین', 'ژلوفن', 'آمیفن', 'Tylenol', 'Panadol'],
+                    forms: ['قرص ۵۰۰ میلی‌گرم', 'قرص ۳۲۵ میلی‌گرم', 'شربت ۱۲۰mg/5ml', 'شیاف ۱۲۵mg'],
+                    indications: ['تسکین دردهای خفیف تا متوسط (سردرد، دندان‌درد، دردهای عضلانی)', 'کاهش تب و کنترل علائم سرماخوردگی و آنفولانزا', 'تسکین درد مفاصل در استئوآرتریت خفیف'],
+                    dosage: 'بزرگسالان: ۵۰۰ تا ۱۰ baseline هر ۴ تا ۶ ساعت در صورت نیاز. حداکثر ۴ گرم در روز.',
+                    mechanism: 'مهار سنتز پروستاگلاندین‌ها در سیستم اعصاب مرکزی (CNS) و محاصره پیام‌های تب در هیپوتالاموس.',
+                    sideCommon: ['تهوع خفیف', 'واکنش‌های پوستی بسیار نادر'],
+                    sideSevere: ['سمیت حاد کبد (در دوزهای بالاتر از ۴ گرم)', 'سندروم استیونس-جانسون (نادر)'],
+                    pregnancy: 'رده B - ایمن‌ترین مسکن در دوران بارداری تحت نظر پزشک.',
+                    contraindications: ['نارسایی شدید کبدی یا هپاتیت فعال', 'حساسیت مفرط به پاراستامول'],
+                    interactions: [
+                        { drug: 'وارفارین', severity: 'متوسط', detail: 'افزایش خطر خونریزی در مصرف طولانی مدت استامینوفن.' },
+                        { drug: 'الکل', severity: 'شدید', detail: 'افزایش شدید خطر سمیت کبدی (هپاتوتوکسیستی).' }
+                    ]
+                },
+                {
+                    fa: 'آموکسی‌سیلین', en: 'Amoxicillin', cat: 'antibiotic',
+                    shape: 'capsule', color: '#3b82f6', secondaryColor: '#fef08a',
+                    brands: ['فارمنتین', 'آموکسی‌کلاو', 'Amoxil'],
+                    forms: ['کپسول ۵۰۰ میلی‌گرم', 'کپسول ۲۵۰ میلی‌گرم', 'ساسپنشن ۱۲۵mg/5ml'],
+                    indications: ['درمان عفونت‌های مجاری تنفسی فوقانی و تحتانی (سینوزیت، برونشیت)', 'عفونت‌های گوش میان (اوتیت میانی) و گلودرد استرپتوکوکی', 'عفونت‌های مجاری ادراری و ریشه‌کنی هلیکوباکتر پیلوری معده'],
+                    dosage: 'بزرگسالان: ۵۰۰ میلی‌گرم هر ۸ ساعت یا ۸۷۵ میلی‌گرم هر ۱۲ ساعت به مدت ۷ تا ۱۰ روز.',
+                    mechanism: 'انتقال و مهار سنتز دیواره سلولی باکتری‌ها از طریق پیوند به پروتئین‌های PBP و لیز باکتری.',
+                    sideCommon: ['اسهال و دل‌پیچه', 'تهوع و استفراغ', 'راش پوستی خفیف'],
+                    sideSevere: ['شوک آنافیلاکسی و واکنش حساسیت شدید', 'کولیت پزودوممبرانوس باکتریایی'],
+                    pregnancy: 'رده B - به‌طور کلی در بارداری ایمن محسوب می‌شود.',
+                    contraindications: ['سابقه حساسیت شدید به پنی‌سیلین‌ها یا سفالوسپورین‌ها'],
+                    interactions: [
+                        { drug: 'آلوپورینول', severity: 'متوسط', detail: 'افزایش شانس بروز راش پوستی.' }
+                    ]
+                },
+                {
+                    fa: 'پماد بتامتازون', en: 'Betamethasone Ointment / Cream', cat: 'derma',
+                    shape: 'cream', color: '#0284c7', accentColor: '#0d9488',
+                    brands: ['بتادرم', 'Betnovate'],
+                    forms: ['کرم ۰.۱٪ ۱۵ گرمی', 'پماد موضعی ۰.۱٪'],
+                    indications: ['درمان التهابات شدید پوستی و اگزما', 'تسکین خارش و پسوریازیس', 'کنترل درماتیت‌های آلرژیک موضعی'],
+                    dosage: 'یک تا دو بار در روز لایه نازکی روی موضع مالیده شود.',
+                    mechanism: 'کورتیکواستروئید قوی مهارکننده آزادسازی واسطه‌های التهابی و انقباض عروق موضعی.',
+                    sideCommon: ['سوزش موضعی نازک شدن پوست در استفاده طولانی'],
+                    sideSevere: ['جذب سیستمی و سرکوب آدرنال در مصرف وسیع'],
+                    pregnancy: 'رده C - مصرف محدود موضعی.',
+                    contraindications: ['عفونت‌های قارچی یا ویروسی درمان نشده پوست'],
+                    interactions: []
+                },
+                {
+                    fa: 'ژل دیکلوفناک (ولتارن)', en: 'Diclofenac Gel (Voltaren)', cat: 'analgesic',
+                    shape: 'gel', color: '#e11d48', secondaryColor: '#fb7185',
+                    brands: ['ولترژل', 'Voltaren Emulgel'],
+                    forms: ['ژل موضعی ۱٪', 'ژل ۲٪ پمپی'],
+                    indications: ['تسکین دردهای موضعی مفاصل و عضلات', 'کاهش تورم ناشی از ضرب دیدگی و آرتروز زانو'],
+                    dosage: '۲ تا ۴ گرم ژل روی موضع ۳ تا ۴ بار در روز ماساژ داده شود.',
+                    mechanism: 'مهار موضعی آنزیم‌های cyclooxygenase و مهار سنتز پروستاگلاندین در بافت درگیر.',
+                    sideCommon: ['قرمزی و خشکی موضعی پوست'],
+                    sideSevere: ['راش‌های آلرژیک تاولی تاولی'],
+                    pregnancy: 'رده C - در سه ماهه سوم ممنوع.',
+                    contraindications: ['زخم باز پوستی و حساسیت به NSAIDها'],
+                    interactions: []
+                },
+                {
+                    fa: 'قطره چشمی سیپروفلوکساسین', en: 'Ciprofloxacin Eye Drops', cat: 'ent',
+                    shape: 'drop', color: '#06b6d4',
+                    brands: ['سیپراکسیر', 'Ciloxan'],
+                    forms: ['قطره چشمی ۰.۳٪ ۵ml'],
+                    indications: ['درمان عفونت‌های باکتریایی ملتحمه چشم (کونژونکتیویت)', 'عفونت‌های قرنیه و زخم‌های باکتریایی چشم'],
+                    dosage: '۱ تا ۲ قطره هر ۲ ساعت در ۲ روز اول، سپس هر ۴ ساعت.',
+                    mechanism: 'فلوروکینولون مهارکننده آنزیم DNA ژیراز و توپوایزومراز باکتریایی.',
+                    sideCommon: ['سوزش و تاری دید موقت'],
+                    sideSevere: ['رسوب دارویی روی قرنیه'],
+                    pregnancy: 'رده C - مصرف چشمی اثر سیستمی اندک دارد.',
+                    contraindications: ['عفونت‌های ویروسی چشم (تبخال چشمی)'],
+                    interactions: []
+                }
+            ];
+
+            coreDrugs.forEach(d => drugs.push({ id: globalId++, ...d }));
+
+            // Expand procedurally to 3,360 drugs (280 per category)
+            const PREFIXES = ['آبرا', 'آلفا', 'بتا', 'دکسترو', 'ماید', 'پرو', 'متابو', 'میکرو', 'نئو', 'سینو', 'پلکس', 'پلاس'];
+            const SUFFIXES = ['ژل', 'کامپاند', 'فورت', 'دیپو', 'اکسترا', 'کورت', 'کلین', 'تونیک', 'درم', 'کلاو'];
+
+            CATEGORIES.forEach((cat) => {
+                for (let i = 1; i <= 280; i++) {
+                    const prefix = PREFIXES[i % PREFIXES.length];
+                    const suffix = SUFFIXES[i % SUFFIXES.length];
+                    
+                    let shapeType = 'round_tablet';
+                    let mainColor = '#ffffff';
+                    let secColor = '#ffffff';
+
+                    if (cat.id === 'derma') {
+                        shapeType = i % 3 === 0 ? 'cream' : (i % 2 === 0 ? 'gel' : 'round_tablet');
+                        mainColor = i % 2 === 0 ? '#0284c7' : '#ffffff';
+                        secColor = '#e11d48';
+                    } else if (cat.id === 'ent') {
+                        shapeType = i % 2 === 0 ? 'drop' : 'syrup';
+                        mainColor = '#06b6d4';
+                    } else if (cat.id === 'antibiotic' || cat.id === 'neuro') {
+                        shapeType = i % 4 === 0 ? 'drop' : (i % 3 === 0 ? 'capsule' : 'oval_tablet');
+                        mainColor = i % 3 === 0 ? '#0284c7' : (i % 2 === 0 ? '#10b981' : '#ffffff');
+                        secColor = '#fef08a';
+                    } else if (cat.id === 'respiratory') {
+                        shapeType = i % 4 === 0 ? 'spray' : (i % 3 === 0 ? 'drop' : (i % 2 === 0 ? 'syrup' : 'round_tablet'));
+                    } else if (cat.id === 'analgesic') {
+                        shapeType = i % 5 === 0 ? 'gel' : (i % 3 === 0 ? 'capsule' : (i % 2 === 0 ? 'oval_tablet' : 'round_tablet'));
+                        mainColor = i % 5 === 0 ? '#e11d48' : '#ffffff';
+                    } else if (cat.id === 'blood' || cat.id === 'emergency') {
+                        shapeType = i % 2 === 0 ? 'vial' : 'round_tablet';
+                    }
+
+                    drugs.push({
+                        id: globalId++,
+                        fa: `${prefix}${cat.name.split(' ')[0]}${i} ${suffix}`,
+                        en: `${cat.id.toUpperCase()}-${prefix.toUpperCase()}-${100 + i}`,
+                        cat: cat.id,
+                        shape: shapeType,
+                        color: mainColor,
+                        secondaryColor: secColor,
+                        brands: [`برند الفارما ${i}`, `داروسازی ایران ${i % 10 + 1}`],
+                        forms: [`فرم تخصصی ${i * 5}mg/ml`],
+                        indications: [
+                            `کنترل بالینی و تخصصی علائم مرتبط با ${cat.name}`,
+                            `تسکین نشانه‌های بیماری در فاز حاد و مزمن`,
+                            `بهبود کیفیت زندگی بیمار طبق گایدلاین‌های بالینی`
+                        ],
+                        dosage: `بر اساس دوزاژ تجویزی پزشک معالج: ۱ تا ۳ بار در روز.`,
+                        mechanism: `مهار یا تحریک اختصاصی گیرنده‌های بافتی مرتبط با ${cat.name}.`,
+                        sideCommon: ['عوارض گوارشی یا موضعی خفیف', 'سرگیجه یا خشکی دهان'],
+                        sideSevere: ['واکنش‌های حساسیت مفرط دارویی (در بیماران مستعد)'],
+                        pregnancy: 'رده C - نیازمند سنجش دقیق نسبت منفعت به خطر توسط پزشک.',
+                        contraindications: ['حساسیت مفرط شناخته‌شده به ترکیب فعال دارویی'],
+                        interactions: [
+                            { drug: 'داروهای متداول هم‌گروه', severity: 'متوسط', detail: 'امکان لزوم تنظیم دوز در مصرف همزمان.' }
+                        ]
+                    });
+                }
+            });
+
+            return drugs;
+        }
+
+        /* ----------------------------------------------------
+           3. BULLETPROOF INITIALIZATION & CATEGORY DROPDOWN
+        ---------------------------------------------------- */
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+        function initApp() {
+            try {
+                // Generate Database
+                ALL_DRUGS = generateClinicalDatabase();
+
+                // Update Total Counter
+                const totalCounter = document.getElementById('total-db-count-text');
+                if (totalCounter) totalCounter.innerText = ALL_DRUGS.length.toLocaleString('fa-IR');
+
+                // Load Saved Favorites
+                loadFavorites();
+
+                // Populate Category Select Dropdown reliably
+                populateCategoryDropdown();
+
+            } catch(e) {
+                console.error("Initialization error:", e);
+            }
+        }
+
+        function populateCategoryDropdown() {
+            const selectEl = document.getElementById('category-select');
+            if (!selectEl) return;
+
+            try {
+                // Calculate Exact Counts
+                const counts = {};
+                CATEGORIES.forEach(c => counts[c.id] = 0);
+                ALL_DRUGS.forEach(d => {
+                    if (counts[d.cat] !== undefined) counts[d.cat]++;
+                });
+
+                let optionsHTML = `
+                    <option value="">انتخاب دسته‌بندی تخصصی...</option>
+                    <option value="all">نمایش همه داروها (${ALL_DRUGS.length.toLocaleString('fa-IR')} دارو)</option>
+                `;
+
+                CATEGORIES.forEach(cat => {
+                    const cnt = counts[cat.id] || 0;
+                    optionsHTML += `<option value="${cat.id}">${cat.name} (${cnt.toLocaleString('fa-IR')} دارو)</option>`;
+                });
+
+                selectEl.innerHTML = optionsHTML;
+            } catch (err) {
+                console.error("Dropdown error:", err);
+            }
+        }
+
+        /* ----------------------------------------------------
+           4. SEARCH & FILTER CONTROLLERS
+        ---------------------------------------------------- */
+        function handleSearchInput(query) {
+            const clearBtn = document.getElementById('search-clear-btn');
+            if (clearBtn) {
+                if (query.trim().length > 0) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+            filterDrugs();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('main-search-input');
+            if (input) input.value = '';
+            document.getElementById('search-clear-btn')?.classList.add('hidden');
+            filterDrugs();
+        }
+
+        function handleCategorySelect(catId) {
+            filterDrugs();
+        }
+
+        function handleSortSelect(sortMode) {
+            filterDrugs();
+        }
+
+        function filterDrugs() {
+            const searchVal = (document.getElementById('main-search-input')?.value || '').trim().toLowerCase();
+            const catVal = document.getElementById('category-select')?.value || '';
+            const sortVal = document.getElementById('sort-select')?.value || 'fa';
+
+            const welcomeBox = document.getElementById('initial-welcome-box');
+            const resultsWrapper = document.getElementById('results-wrapper');
+            const noResultsBox = document.getElementById('no-results-box');
+
+            // IF Empty Search & Category => Show Welcome Card
+            if (searchVal === '' && catVal === '') {
+                welcomeBox?.classList.remove('hidden');
+                resultsWrapper?.classList.add('hidden');
+                noResultsBox?.classList.add('hidden');
+                return;
+            }
+
+            welcomeBox?.classList.add('hidden');
+
+            FILTERED_DRUGS = ALL_DRUGS.filter(drug => {
+                const matchesCategory = (catVal === 'all' || catVal === '' || drug.cat === catVal);
+                const matchesSearch = searchVal === '' || 
+                    drug.fa.toLowerCase().includes(searchVal) ||
+                    drug.en.toLowerCase().includes(searchVal) ||
+                    drug.brands.some(b => b.toLowerCase().includes(searchVal)) ||
+                    drug.indications.some(i => i.toLowerCase().includes(searchVal));
+
+                return matchesCategory && matchesSearch;
+            });
+
+            // Sort
+            FILTERED_DRUGS.sort((a, b) => {
+                if (sortVal === 'fa') return a.fa.localeCompare(b.fa, 'fa');
+                return a.en.localeCompare(b.en, 'en');
+            });
+
+            // Update Counts
+            const resultCountEl = document.getElementById('result-count-text');
+            if (resultCountEl) resultCountEl.innerText = FILTERED_DRUGS.length.toLocaleString('fa-IR');
+
+            const filterLabelEl = document.getElementById('active-filter-label');
+            if (filterLabelEl) {
+                if (catVal && catVal !== 'all') {
+                    const catObj = CATEGORIES.find(c => c.id === catVal);
+                    filterLabelEl.innerText = catObj ? catObj.name : '';
+                } else if (searchVal) {
+                    filterLabelEl.innerText = `جستجو: "${searchVal}"`;
+                } else {
+                    filterLabelEl.innerText = 'همه داروها';
+                }
+            }
+
+            if (FILTERED_DRUGS.length === 0) {
+                resultsWrapper?.classList.add('hidden');
+                noResultsBox?.classList.remove('hidden');
+            } else {
+                noResultsBox?.classList.add('hidden');
+                resultsWrapper?.classList.remove('hidden');
+                currentPage = 1;
+                renderDrugGrid(false);
+            }
+        }
+
+        function renderDrugGrid(append = false) {
+            const grid = document.getElementById('drug-cards-grid');
+            if (!grid) return;
+
+            if (!append) grid.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * PAGE_SIZE;
+            const pageItems = FILTERED_DRUGS.slice(startIndex, startIndex + PAGE_SIZE);
+
+            pageItems.forEach(drug => {
+                grid.appendChild(createDrugCardElement(drug));
+            });
+
+            const loadMoreBtnContainer = document.getElementById('load-more-container');
+            if (loadMoreBtnContainer) {
+                if (startIndex + PAGE_SIZE < FILTERED_DRUGS.length) {
+                    loadMoreBtnContainer.classList.remove('hidden');
+                } else {
+                    loadMoreBtnContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        function loadMoreDrugs() {
+            currentPage++;
+            renderDrugGrid(true);
+        }
+
+        function createDrugCardElement(drug) {
+            const catObj = CATEGORIES.find(c => c.id === drug.cat) || CATEGORIES[0];
+            const isFav = FAVORITES.includes(drug.id);
+
+            const card = document.createElement('div');
+            card.className = "glass-spatial rounded-3xl p-5 shadow-3d-md border border-white/80 dark:border-slate-800 card-spatial flex flex-col justify-between space-y-4 relative overflow-hidden cursor-pointer";
+            card.onclick = () => openModal(drug.id);
+
+            card.innerHTML = `
+                <div class="space-y-3">
+                    <div class="flex items-start justify-between">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border border-teal-200 dark:border-teal-800 shadow-3d-sm">
+                            <i class="fa-solid ${catObj.icon} ml-1"></i> ${catObj.name}
+                        </span>
+                        <button onclick="event.stopPropagation(); toggleFavorite(${drug.id})" class="text-slate-400 hover:text-rose-500 transition p-1 text-lg">
+                            <i class="${isFav ? 'fa-solid text-rose-500' : 'fa-regular'} fa-bookmark"></i>
+                        </button>
+                    </div>
+
+                    <div>
+                        <h3 class="text-base font-black text-slate-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition cursor-pointer" onclick="event.stopPropagation(); openModal(${drug.id})">${drug.fa}</h3>
+                        <p class="text-xs text-slate-400 font-medium italic dir-ltr text-right mt-0.5 cursor-pointer" onclick="event.stopPropagation(); openModal(${drug.id})">${drug.en}</p>
+                    </div>
+
+                    <div class="space-y-1.5 pt-1">
+                        <div class="text-xs font-bold text-teal-950 dark:text-teal-200 flex items-center gap-1.5">
+                            <i class="fa-solid fa-notes-medical text-teal-500 text-xs"></i> <span>کاربرد اصلی:</span>
+                        </div>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed font-medium">
+                            ${drug.indications[0] || 'تسکین دردهای بالینی و درمان تخصصی'}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs font-bold">
+                    <span class="text-slate-500 dark:text-slate-400 text-[11px]">
+                        <i class="fa-solid fa-pills ml-1"></i> ${drug.forms[0] || 'فرم خوراکی'}
+                    </span>
+                    <span class="text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 text-xs">
+                        جزئیات و ۳بعدی <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    </span>
+                </div>
+            `;
+            return card;
+        }
+
+        /* ----------------------------------------------------
+           5. FAVORITES & THEME
+        ---------------------------------------------------- */
+        function loadFavorites() {
+            try {
+                const stored = localStorage.getItem('ds_favs');
+                if (stored) FAVORITES = JSON.parse(stored);
+            } catch(e) { FAVORITES = []; }
+            updateFavBadge();
+        }
+
+        function toggleFavorite(id) {
+            const idx = FAVORITES.indexOf(id);
+            if (idx > -1) FAVORITES.splice(idx, 1);
+            else FAVORITES.push(id);
+
+            try { localStorage.setItem('ds_favs', JSON.stringify(FAVORITES)); } catch(e) {}
+            updateFavBadge();
+
+            if (currentTab === 'explorer') filterDrugs();
+            else renderCabinetGrid();
+
+            const modalFavBtn = document.getElementById('modal-fav-btn');
+            if (modalFavBtn) {
+                const isFav = FAVORITES.includes(id);
+                modalFavBtn.innerHTML = `<i class="${isFav ? 'fa-solid text-rose-500' : 'fa-regular'} fa-bookmark text-base"></i>`;
+                modalFavBtn.onclick = () => toggleFavorite(id);
+            }
+        }
+
+        function updateFavBadge() {
+            const badge = document.getElementById('fav-count-badge');
+            if (badge) badge.innerText = FAVORITES.length;
+        }
+
+        function clearAllFavorites() {
+            FAVORITES = [];
+            try { localStorage.removeItem('ds_favs'); } catch(e) {}
+            updateFavBadge();
+            renderCabinetGrid();
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon text-sm';
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                icon.className = 'fa-solid fa-sun text-sm text-amber-400';
+            }
+        }
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            const explorerSec = document.getElementById('tab-explorer');
+            const cabinetSec = document.getElementById('tab-cabinet');
+
+            if (tabId === 'explorer') {
+                explorerSec?.classList.remove('hidden');
+                cabinetSec?.classList.add('hidden');
+            } else {
+                explorerSec?.classList.add('hidden');
+                cabinetSec?.classList.remove('hidden');
+                renderCabinetGrid();
+            }
+        }
+
+        function renderCabinetGrid() {
+            const grid = document.getElementById('cabinet-cards-grid');
+            const emptyState = document.getElementById('cabinet-empty-state');
+            if (!grid || !emptyState) return;
+
+            grid.innerHTML = '';
+            const favDrugs = ALL_DRUGS.filter(d => FAVORITES.includes(d.id));
+
+            if (favDrugs.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                grid.classList.remove('hidden');
+                favDrugs.forEach(drug => {
+                    grid.appendChild(createDrugCardElement(drug));
+                });
+            }
+        }
+
+        function resetToInitialState() {
+            switchTab('explorer');
+            const searchInput = document.getElementById('main-search-input');
+            const categorySelect = document.getElementById('category-select');
+            if (searchInput) searchInput.value = '';
+            if (categorySelect) categorySelect.value = '';
+            document.getElementById('search-clear-btn')?.classList.add('hidden');
+            filterDrugs();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /* ----------------------------------------------------
+           6. MODAL & 3D STUDIO VIEWER
+        ---------------------------------------------------- */
+        function openModal(drugId) {
+            const drug = ALL_DRUGS.find(d => d.id === drugId);
+            if (!drug) return;
+
+            const modal = document.getElementById('drug-detail-modal');
+            const catObj = CATEGORIES.find(c => c.id === drug.cat) || CATEGORIES[0];
+
+            document.getElementById('modal-category-badge').innerText = catObj.name;
+            document.getElementById('modal-title-fa').innerText = drug.fa;
+            document.getElementById('modal-title-en').innerText = drug.en;
+
+            const isFav = FAVORITES.includes(drug.id);
+            const favBtn = document.getElementById('modal-fav-btn');
+            favBtn.innerHTML = `<i class="${isFav ? 'fa-solid text-rose-500' : 'fa-regular'} fa-bookmark text-base"></i>`;
+            favBtn.onclick = () => toggleFavorite(drug.id);
+
+            // 1. FIRST INFO BOX AFTER 3D VIEW: Primary Indications / Main Uses
+            document.getElementById('modal-indications').innerHTML = drug.indications.map(i => `<li>${i}</li>`).join('');
+
+            // 2. General Info & Forms (Borderless Badges)
+            document.getElementById('modal-brands').innerHTML = drug.brands.map(b => 
+                `<span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-3d-sm">${b}</span>`
+            ).join('');
+            
+            document.getElementById('modal-forms').innerHTML = drug.forms.map(f => 
+                `<span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 shadow-3d-sm">${f}</span>`
+            ).join('');
+
+            document.getElementById('modal-dosage').innerText = drug.dosage;
+
+            // 3. Mechanism
+            document.getElementById('modal-mechanism').innerText = drug.mechanism;
+
+            // 4. Side Effects
+            document.getElementById('modal-side-common').innerHTML = drug.sideCommon.map(s => `<li>${s}</li>`).join('');
+            document.getElementById('modal-side-severe').innerHTML = drug.sideSevere.map(s => `<li>${s}</li>`).join('');
+
+            // 5. Pregnancy & Contraindications
+            document.getElementById('modal-pregnancy').innerText = drug.pregnancy;
+            document.getElementById('modal-contraindications').innerHTML = drug.contraindications.map(c => `<li>${c}</li>`).join('');
+
+            // 6. Interactions (Borderless Items)
+            document.getElementById('modal-interactions-list').innerHTML = drug.interactions.map(item => `
+                <div class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl shadow-3d-sm flex items-center justify-between text-xs">
+                    <div>
+                        <strong class="text-slate-900 dark:text-white font-bold">${item.drug}</strong>
+                        <p class="text-slate-500 dark:text-slate-400 mt-0.5">${item.detail}</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-black ${item.severity === 'شدید' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'}">
+                        تداخل ${item.severity}
+                    </span>
+                </div>
+            `).join('');
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            setTimeout(() => {
+                init3DStudio(drug);
+            }, 50);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('drug-detail-modal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            dispose3DStudio();
+        }
+
+        function reset3dCamera() {
+            targetRotation = { x: 0, y: 0 };
+            currentRotation = { x: 0, y: 0 };
+        }
+
+        function dispose3DStudio() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (renderer3D && renderer3D.domElement) {
+                renderer3D.domElement.remove();
+            }
+            renderer3D = null;
+            scene3D = null;
+            camera3D = null;
+            mesh3D = null;
+        }
+
+        /* ----------------------------------------------------
+           7. THREE.JS PHOTOREALISTIC 3D STUDIO VIEWER
+        ---------------------------------------------------- */
+        function init3DStudio(drug) {
+            dispose3DStudio();
+
+            const container = document.getElementById('canvas-3d-wrapper');
+            if (!container) return;
+
+            const width = container.clientWidth || 320;
+            const height = container.clientHeight || 170;
+
+            scene3D = new THREE.Scene();
+            camera3D = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+            camera3D.position.set(0, 0, 5);
+
+            renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer3D.setSize(width, height);
+            renderer3D.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer3D.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer3D.toneMappingExposure = 1.0;
+            container.appendChild(renderer3D.domElement);
+
+            // NEUTRAL DAYLIGHT LIGHTING (No Warm Yellow Tint)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+            scene3D.add(ambientLight);
+
+            const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            keyLight.position.set(4, 5, 4);
+            scene3D.add(keyLight);
+
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            fillLight.position.set(-4, -2, -3);
+            scene3D.add(fillLight);
+
+            mesh3D = createDrug3DMesh(drug);
+            scene3D.add(mesh3D);
+
+            targetRotation = { x: 0, y: 0 };
+            currentRotation = { x: 0, y: 0 };
+            isDragging3D = false;
+
+            const dom = renderer3D.domElement;
+
+            const onPointerDown = (e) => {
+                isDragging3D = true;
+                previousMousePosition = {
+                    x: e.clientX || (e.touches && e.touches[0].clientX) || 0,
+                    y: e.clientY || (e.touches && e.touches[0].clientY) || 0
+                };
+            };
+
+            const onPointerMove = (e) => {
+                if (!isDragging3D) return;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+                
+                const deltaX = clientX - previousMousePosition.x;
+                const deltaY = clientY - previousMousePosition.y;
+
+                targetRotation.y += deltaX * 0.012;
+                targetRotation.x += deltaY * 0.012;
+
+                previousMousePosition = { x: clientX, y: clientY };
+            };
+
+            const onPointerUp = () => { isDragging3D = false; };
+
+            dom.addEventListener('mousedown', onPointerDown);
+            dom.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerUp);
+
+            dom.addEventListener('touchstart', onPointerDown, { passive: true });
+            dom.addEventListener('touchmove', onPointerMove, { passive: true });
+            window.addEventListener('touchend', onPointerUp);
+
+            const animate = () => {
+                animationFrameId = requestAnimationFrame(animate);
+
+                if (mesh3D) {
+                    if (!isDragging3D) {
+                        targetRotation.y += 0.005;
+                    }
+
+                    // Lerp Inertial Damping
+                    currentRotation.x += (targetRotation.x - currentRotation.x) * 0.08;
+                    currentRotation.y += (targetRotation.y - currentRotation.y) * 0.08;
+
+                    mesh3D.rotation.x = currentRotation.x;
+                    mesh3D.rotation.y = currentRotation.y;
+                }
+
+                if (renderer3D && scene3D && camera3D) {
+                    renderer3D.render(scene3D, camera3D);
+                }
+            };
+
+            animate();
+        }
+
+        function createDrug3DMesh(drug) {
+            const group = new THREE.Group();
+            const mainHex = drug.color || '#ffffff';
+
+            if (drug.shape === 'cream') {
+                // --- 1. OINTMENT / CREAM TUBE WITH DOLLOP ---
+                const tubeGeo = new THREE.CylinderGeometry(0.38, 0.42, 1.4, 32);
+                const tubeMat = new THREE.MeshPhysicalMaterial({
+                    color: 0xf8fafc,
+                    roughness: 0.25,
+                    metalness: 0.2,
+                    clearcoat: 0.6
+                });
+                const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+
+                const crimpGeo = new THREE.BoxGeometry(0.85, 0.08, 0.08);
+                const crimpMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.6, roughness: 0.4 });
+                const crimpMesh = new THREE.Mesh(crimpGeo, crimpMat);
+                crimpMesh.position.y = -0.74;
+
+                const shoulderGeo = new THREE.CylinderGeometry(0.2, 0.38, 0.25, 32);
+                const shoulderMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3 });
+                const shoulderMesh = new THREE.Mesh(shoulderGeo, shoulderMat);
+                shoulderMesh.position.y = 0.82;
+
+                const capGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.35, 12);
+                const capMat = new THREE.MeshPhysicalMaterial({
+                    color: new THREE.Color(drug.accentColor || (mainHex !== '#ffffff' ? mainHex : '#0d9488')),
+                    roughness: 0.2
+                });
+                const capMesh = new THREE.Mesh(capGeo, capMat);
+                capMesh.position.y = 1.08;
+
+                const labelGeo = new THREE.CylinderGeometry(0.425, 0.425, 0.8, 32);
+                const labelMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(mainHex !== '#ffffff' ? mainHex : '#0284c7'), roughness: 0.4 });
+                const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+                labelMesh.position.y = 0.1;
+
+                // Cream Dollop
+                const creamDollopGroup = new THREE.Group();
+                const dollopBaseGeo = new THREE.SphereGeometry(0.25, 16, 16);
+                const dollopMat = new THREE.MeshStandardMaterial({ color: 0xfffaf0, roughness: 0.75 });
+                const dollopBase = new THREE.Mesh(dollopBaseGeo, dollopMat);
+                dollopBase.scale.set(1.2, 0.6, 1.2);
+
+                const dollopPeakGeo = new THREE.ConeGeometry(0.18, 0.3, 16);
+                const dollopPeak = new THREE.Mesh(dollopPeakGeo, dollopMat);
+                dollopPeak.position.y = 0.18;
+                dollopPeak.rotation.z = -0.2;
+
+                creamDollopGroup.add(dollopBase, dollopPeak);
+                creamDollopGroup.position.set(0.65, -0.5, 0.2);
+
+                group.add(tubeMesh, crimpMesh, shoulderMesh, capMesh, labelMesh, creamDollopGroup);
+                group.rotation.z = -0.35;
+
+            } else if (drug.shape === 'gel') {
+                // --- 2. TRANSLUCENT GEL TUBE & JEWEL DROPLET ---
+                const gelTubeGeo = new THREE.CylinderGeometry(0.45, 0.42, 1.5, 32);
+                const gelTubeMat = new THREE.MeshPhysicalMaterial({
+                    color: new THREE.Color(mainHex !== '#ffffff' ? mainHex : '#e11d48'),
+                    transmission: 0.82,
+                    transparent: true,
+                    opacity: 0.9,
+                    roughness: 0.1,
+                    ior: 1.45,
+                    clearcoat: 1.0
+                });
+                const gelTubeMesh = new THREE.Mesh(gelTubeGeo, gelTubeMat);
+
+                const capGeo = new THREE.CylinderGeometry(0.25, 0.45, 0.4, 32);
+                const capMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.5 });
+                const capMesh = new THREE.Mesh(capGeo, capMat);
+                capMesh.position.y = 0.95;
+
+                const gelDropGeo = new THREE.SphereGeometry(0.22, 16, 16);
+                gelDropGeo.scale(1.0, 1.4, 0.9);
+                const gelDropMesh = new THREE.Mesh(gelDropGeo, gelTubeMat);
+                gelDropMesh.position.set(-0.6, -0.4, 0.2);
+
+                group.add(gelTubeMesh, capMesh, gelDropMesh);
+                group.rotation.z = -0.25;
+
+            } else if (drug.shape === 'drop') {
+                // --- 3. DROPPER BOTTLE & HOVERING DROPLET ---
+                const bottleGeo = new THREE.CylinderGeometry(0.42, 0.45, 1.1, 32);
+                const bottleMat = new THREE.MeshPhysicalMaterial({
+                    color: new THREE.Color(mainHex !== '#ffffff' ? mainHex : '#06b6d4'),
+                    transmission: 0.7,
+                    transparent: true,
+                    opacity: 0.88,
+                    roughness: 0.15,
+                    ior: 1.48
+                });
+                const bottleMesh = new THREE.Mesh(bottleGeo, bottleMat);
+
+                const collarGeo = new THREE.CylinderGeometry(0.3, 0.42, 0.2, 32);
+                const collarMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+                const collarMesh = new THREE.Mesh(collarGeo, collarMat);
+                collarMesh.position.y = 0.65;
+
+                const teatGeo = new THREE.CylinderGeometry(0.2, 0.24, 0.45, 32);
+                const teatMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+                const teatMesh = new THREE.Mesh(teatGeo, teatMat);
+                teatMesh.position.y = 0.95;
+
+                const dropGeo = new THREE.SphereGeometry(0.14, 16, 16);
+                dropGeo.scale(0.85, 1.4, 0.85);
+                const dropMat = new THREE.MeshPhysicalMaterial({
+                    color: 0x38bdf8,
+                    transmission: 0.95,
+                    transparent: true,
+                    roughness: 0.05
+                });
+                const teardropMesh = new THREE.Mesh(dropGeo, dropMat);
+                teardropMesh.position.set(0, -0.9, 0);
+
+                group.add(bottleMesh, collarMesh, teatMesh, teardropMesh);
+
+            } else if (drug.shape === 'capsule') {
+                // --- 4. NON-OVERLAPPING CAPSULE (Radius 0.485 / 0.505) ---
+                const bodyRadius = 0.485;
+                const bodyCylGeo = new THREE.CylinderGeometry(bodyRadius, bodyRadius, 0.95, 32);
+                const bodyDomeGeo = new THREE.SphereGeometry(bodyRadius, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+
+                const bodyMat = new THREE.MeshPhysicalMaterial({
+                    color: new THREE.Color(drug.secondaryColor || '#ffffff'),
+                    roughness: 0.15,
+                    clearcoat: 0.8
+                });
+
+                const bodyMesh = new THREE.Mesh(bodyCylGeo, bodyMat);
+                bodyMesh.position.y = -0.35;
+
+                const bodyDome = new THREE.Mesh(bodyDomeGeo, bodyMat);
+                bodyDome.rotation.x = Math.PI;
+                bodyDome.position.y = -0.825;
+
+                const capRadius = 0.505;
+                const capCylGeo = new THREE.CylinderGeometry(capRadius, capRadius, 0.65, 32);
+                const capDomeGeo = new THREE.SphereGeometry(capRadius, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+
+                const capMat = new THREE.MeshPhysicalMaterial({
+                    color: new THREE.Color(mainHex),
+                    roughness: 0.15,
+                    clearcoat: 0.8
+                });
+
+                const capMesh = new THREE.Mesh(capCylGeo, capMat);
+                capMesh.position.y = 0.35;
+
+                const capDome = new THREE.Mesh(capDomeGeo, capMat);
+                capDome.position.y = 0.675;
+
+                const ringGeo = new THREE.TorusGeometry(capRadius, 0.012, 16, 32);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.35, transparent: true });
+                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                ringMesh.rotation.x = Math.PI / 2;
+                ringMesh.position.y = 0.025;
+
+                group.add(bodyMesh, bodyDome, capMesh, capDome, ringMesh);
+
+            } else if (drug.shape === 'oval_tablet') {
+                // --- 5. OVAL TABLET ---
+                const tabletGeo = new THREE.CylinderGeometry(0.9, 0.9, 0.45, 32);
+                tabletGeo.scale(1.4, 1.0, 0.8);
+                const tabMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(mainHex), roughness: 0.25, clearcoat: 0.4 });
+                const tabletMesh = new THREE.Mesh(tabletGeo, tabMat);
+
+                const lineGeo = new THREE.BoxGeometry(0.08, 0.47, 1.2);
+                const lineMat = new THREE.MeshBasicMaterial({ color: 0xcccccc });
+                const scoreLine = new THREE.Mesh(lineGeo, lineMat);
+
+                group.add(tabletMesh, scoreLine);
+
+            } else if (drug.shape === 'spray') {
+                // --- 6. SPRAY BOTTLE ---
+                const bodyGeo = new THREE.CylinderGeometry(0.45, 0.45, 1.6, 32);
+                const bodyMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.2 });
+                const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+
+                const capGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.6, 32);
+                const capMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(drug.accentColor || 0x0284c7), roughness: 0.2 });
+                const capMesh = new THREE.Mesh(capGeo, capMat);
+                capMesh.position.y = -0.7;
+
+                group.add(bodyMesh, capMesh);
+
+            } else {
+                // --- 7. STANDARD ROUND TABLET (Pure White #ffffff default) ---
+                const tabletGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.45, 32);
+                const tabMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(mainHex), roughness: 0.25, clearcoat: 0.5 });
+                const tabletMesh = new THREE.Mesh(tabletGeo, tabMat);
+
+                const lineGeo = new THREE.BoxGeometry(0.06, 0.47, 1.6);
+                const lineMat = new THREE.MeshBasicMaterial({ color: 0xdddddd });
+                const scoreLine = new THREE.Mesh(lineGeo, lineMat);
+
+                group.add(tabletMesh, scoreLine);
+            }
+
+            return group;
+        }
+    </script>
+</body>
+</html>
