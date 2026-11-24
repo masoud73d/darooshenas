@@ -180,41 +180,37 @@
             </div>
 
             <!-- Initial State Helpful Guide Card -->
-            <div id="initial-welcome-box" class="py-16 px-6 text-center glass-spatial rounded-3xl shadow-3d-md space-y-5 w-full relative overflow-hidden border-0">
-                <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-white flex items-center justify-center text-4xl shadow-3d-button transform hover:scale-105 transition">
-                    <i class="fa-solid fa-prescription-bottle-medical"></i>
-                </div>
+            <div id="initial-welcome-box" class="py-6 px-6 text-center glass-spatial rounded-3xl shadow-3d-md space-y-4 w-full relative overflow-hidden border-0">
                 <div class="max-w-lg mx-auto space-y-2">
                     <h3 class="text-lg sm:text-xl font-black text-slate-900 dark:text-white">سامانه جامع داروشناس (۶۰۰ داروی یکتا)</h3>
                     <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                        جهت مشاهده اطلاعات کامل بالینی، مدل سه‌بعدی و تداخلات دارویی، نام دارو را در کادر بالا جستجو کنید یا یک دسته‌بندی را از منوی کشویی انتخاب نمایید.
+                        جهت مشاهده اطلاعات کامل بالینی، مدل سه‌بعدی و تداخلات دارویی، نام دارو را در کادر بالا جستجو کنید یا دسته‌بندی مورد نظر را انتخاب نمایید.
                     </p>
                 </div>
-                <div class="pt-2 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-700 dark:text-slate-200">
+                <div class="pt-1 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-700 dark:text-slate-200">
                     <span class="px-4 py-2 rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-3d-sm flex items-center gap-2 border-0">
                         <i class="fa-solid fa-database text-teal-500 text-sm"></i> <strong id="total-db-count-text">۶۰۰</strong> داروی یکتای بالینی
                     </span>
                     <span class="px-4 py-2 rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-3d-sm flex items-center gap-2 border-0">
-                        <i class="fa-solid fa-layer-group text-cyan-500 text-sm"></i> ۱۲ دسته‌بندی تخصصی (۵0 دارو در هر دسته)
-                    </span>
-                    <span class="px-4 py-2 rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-3d-sm flex items-center gap-2 border-0">
-                        <i class="fa-solid fa-mobile-screen text-indigo-500 text-sm"></i> پشتیبانی کامل دکمه Back گوشی
+                        <i class="fa-solid fa-layer-group text-cyan-500 text-sm"></i> ۱۲ دسته‌بندی تخصصی (۵۰ دارو در هر دسته)
                     </span>
                 </div>
             </div>
 
-            <!-- Search & Filter Results Grid -->
-            <div id="results-wrapper" class="hidden space-y-5">
+            <!-- Search & Filter Results Grid (Stacked Vertical List) -->
+            <div id="results-wrapper" class="space-y-4">
                 <div class="flex items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 px-2 font-bold">
-                    <span>تعداد نتایج یافت شده: <strong id="result-count-text" class="text-teal-600 dark:text-teal-400 text-base">0</strong> دارو</span>
-                    <span id="active-filter-label" class="bg-white/90 dark:bg-slate-800/90 px-3 py-1 rounded-xl shadow-3d-sm border-0"></span>
+                    <span>لیست داروها: <strong id="result-count-text" class="text-teal-600 dark:text-teal-400 text-base">۶۰۰</strong> دارو</span>
+                    <span id="active-filter-label" class="bg-white/90 dark:bg-slate-800/90 px-3 py-1 rounded-xl shadow-3d-sm border-0">همه دسته‌ها</span>
                 </div>
 
-                <div id="drug-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                <!-- Vertical Stacked Cards Container -->
+                <div id="drug-cards-grid" class="grid grid-cols-1 gap-3.5 w-full"></div>
 
                 <div id="load-more-container" class="hidden text-center pt-4">
-                    <button onclick="loadMoreDrugs()" class="px-8 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white text-xs sm:text-sm font-bold rounded-2xl transition shadow-3d-button active:scale-95 border-0">
-                        بارگذاری موارد بیشتر...
+                    <button onclick="loadMoreDrugs()" class="px-8 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white text-xs sm:text-sm font-bold rounded-2xl transition shadow-3d-button active:scale-95 border-0 flex items-center justify-center gap-2 mx-auto">
+                        <i class="fa-solid fa-angles-down text-xs"></i>
+                        <span id="load-more-btn-text">بارگذاری موارد بیشتر...</span>
                     </button>
                 </div>
             </div>
@@ -1240,10 +1236,7 @@
             document.getElementById('category-select').value = 'all';
             document.getElementById('sort-select').value = 'fa';
 
-            document.getElementById('initial-welcome-box').classList.remove('hidden');
-            document.getElementById('results-wrapper').classList.add('hidden');
-            document.getElementById('no-results-box').classList.add('hidden');
-
+            applyFilters();
             switchTabUI('explorer');
         }
 
@@ -1326,17 +1319,8 @@
             const resultsWrapper = document.getElementById('results-wrapper');
             const noResultsBox = document.getElementById('no-results-box');
 
-            if (!query && (selectedCat === 'all' || !selectedCat)) {
-                welcomeBox.classList.remove('hidden');
-                resultsWrapper.classList.add('hidden');
-                noResultsBox.classList.add('hidden');
-                return;
-            }
-
-            welcomeBox.classList.add('hidden');
-
             FILTERED_DRUGS = ALL_DRUGS.filter(drug => {
-                const matchesCat = (selectedCat === 'all' || drug.cat === selectedCat);
+                const matchesCat = (selectedCat === 'all' || !selectedCat || drug.cat === selectedCat);
                 const matchesQuery = !query || 
                     drug.fa.toLowerCase().includes(query) || 
                     drug.en.toLowerCase().includes(query) || 
@@ -1374,7 +1358,7 @@
             if (reset) grid.innerHTML = '';
 
             const startIndex = (currentPage - 1) * PAGE_SIZE;
-            const endIndex = startIndex + PAGE_SIZE;
+            const endIndex = Math.min(startIndex + PAGE_SIZE, FILTERED_DRUGS.length);
             const pagedItems = FILTERED_DRUGS.slice(startIndex, endIndex);
 
             pagedItems.forEach(drug => {
@@ -1383,8 +1367,14 @@
             });
 
             const loadMoreBtnContainer = document.getElementById('load-more-container');
-            if (endIndex < FILTERED_DRUGS.length) {
+            const loadMoreBtnText = document.getElementById('load-more-btn-text');
+            const remaining = FILTERED_DRUGS.length - endIndex;
+
+            if (remaining > 0) {
                 loadMoreBtnContainer.classList.remove('hidden');
+                if (loadMoreBtnText) {
+                    loadMoreBtnText.textContent = `بارگذاری موارد بیشتر (${remaining.toLocaleString('fa-IR')} داروی دیگر)`;
+                }
             } else {
                 loadMoreBtnContainer.classList.add('hidden');
             }
@@ -1400,43 +1390,38 @@
             const catObj = CATEGORIES.find(c => c.id === drug.cat) || { name: 'عمومی', icon: 'fa-pills' };
 
             return `
-                <div class="card-spatial glass-spatial rounded-3xl p-5 shadow-3d-md hover:shadow-3d-lg flex flex-col justify-between w-full relative overflow-hidden group border-0">
-                    <div>
-                        <div class="flex items-center justify-between gap-2 mb-3">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 shadow-3d-sm border-0">
+                <div class="card-spatial glass-spatial rounded-2xl p-4 shadow-3d-sm hover:shadow-3d-md flex flex-col sm:flex-row items-start sm:items-center justify-between w-full border-0 gap-3 group transition">
+                    <div class="flex-grow space-y-1.5 cursor-pointer" onclick="openModal(${drug.id})">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 shadow-3d-sm border-0">
                                 <i class="fa-solid ${catObj.icon} text-teal-500"></i> ${catObj.name}
                             </span>
-                            <button onclick="toggleFavorite(${drug.id}, event)" class="w-8 h-8 rounded-xl bg-white/80 dark:bg-slate-800/80 hover:bg-rose-50 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-500 flex items-center justify-center transition shadow-3d-sm border-0 active:scale-95">
-                                <i class="${isFav ? 'fa-solid text-rose-500' : 'fa-regular'} fa-bookmark text-sm"></i>
-                            </button>
+                            <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500">
+                                <i class="fa-solid fa-capsules text-teal-500 ml-1"></i> ${drug.forms[0]}
+                            </span>
                         </div>
-
-                        <!-- Clickable Title Opens Modal -->
-                        <div onclick="openModal(${drug.id})" class="cursor-pointer group-hover:text-teal-600 dark:group-hover:text-teal-400 transition">
-                            <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight leading-snug">
+                        
+                        <div class="flex items-baseline gap-2">
+                            <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight group-hover:text-teal-600 dark:group-hover:text-teal-400 transition">
                                 ${drug.fa}
                             </h3>
-                            <p class="text-xs font-semibold text-slate-400 italic dir-ltr text-right mt-0.5">
-                                ${drug.en}
-                            </p>
+                            <span class="text-xs font-semibold text-slate-400 italic dir-ltr">
+                                (${drug.en})
+                            </span>
                         </div>
 
-                        <div class="mt-3.5 space-y-2">
-                            <div class="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                                <strong class="text-teal-600 dark:text-teal-400 font-bold">مصرف اصلی:</strong> ${drug.indications[0]}
-                            </div>
-                            <div class="flex flex-wrap gap-1 pt-1">
-                                ${drug.brands.slice(0, 2).map(b => `<span class="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-medium text-slate-600 dark:text-slate-400 shadow-3d-sm border-0">${b}</span>`).join('')}
-                            </div>
-                        </div>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-1 font-medium">
+                            <strong class="text-teal-600 dark:text-teal-400 font-bold">مصرف اصلی:</strong> ${drug.indications[0]}
+                        </p>
                     </div>
 
-                    <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
-                        <span class="text-[11px] font-bold text-slate-400">
-                            <i class="fa-solid fa-capsules text-teal-500 ml-1"></i> ${drug.forms[0]}
-                        </span>
-                        <button onclick="openModal(${drug.id})" class="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition shadow-3d-sm active:scale-95 border-0">
-                            جزئیات و ۳بعدی <i class="fa-solid fa-chevron-left text-[10px] mr-1"></i>
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <button onclick="toggleFavorite(${drug.id}, event)" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-500 flex items-center justify-center transition shadow-3d-sm border-0 active:scale-95">
+                            <i class="${isFav ? 'fa-solid text-rose-500' : 'fa-regular'} fa-bookmark text-sm"></i>
+                        </button>
+                        <button onclick="openModal(${drug.id})" class="px-3.5 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white text-xs font-bold rounded-xl transition shadow-3d-button active:scale-95 border-0 flex items-center gap-1.5">
+                            <span>جزئیات و ۳بعدی</span>
+                            <i class="fa-solid fa-chevron-left text-[10px]"></i>
                         </button>
                     </div>
                 </div>
